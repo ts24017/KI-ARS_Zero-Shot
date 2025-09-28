@@ -91,7 +91,6 @@ def zero_shot(text: str, candidate_labels: List[str], template: str, multi_label
         multi_label=multi_label
     )
 
-
 def decide_sentiment(text: str) -> SentimentResult:
     out = zero_shot(text, SENTIMENT_LABELS, SENTIMENT_TEMPLATE, multi_label=False)
     scores = dict(zip(out["labels"], out["scores"]))  # absteigend sortiert
@@ -113,7 +112,6 @@ def analyze_one(text: str,
     qres = detect_question(text)
 
     if qres.is_question:
-        sentiment = SentimentResult(label="neutral", score_pos=0.0, score_neg=0.0)
         topics = multi_label_topics(text, question_topics)
         applicable = "question"
     else:
@@ -126,6 +124,7 @@ def analyze_one(text: str,
         "question": qres.dict(),
         "topics": {"applicable_set": applicable, "labels": topics}
     }
+
 
 
 
