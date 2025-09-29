@@ -73,6 +73,8 @@ class QuestionResult(BaseModel):
     score_question: float
     score_statement: float
     heuristic_used: bool
+    urgency: Optional[str] = None
+
 
 class TopicResult(BaseModel):
     applicable_set: str
@@ -147,11 +149,21 @@ def detect_question(text: str) -> QuestionResult:
 
     is_q = (s_q >= QUESTION_TAU) and (s_q > s_s) and (has_qmark or starts_with_qword)
 
+    urgency = None
+    if is_q:
+        if any(w in lowered for w in ["heute", "morgen", "sofort", "dringend", "gleich"]):
+            urgency = "hoch"
+        elif any(w in lowered for w in ["bald", "demnächst", "nächste", "nächsten", "nächster", "kurzfristig"]):
+            urgency = "mittel"
+        else:
+            urgency = "gering"
+
     return QuestionResult(
         is_question=is_q,
         score_question=round(s_q, 4),
         score_statement=round(s_s, 4),
-        heuristic_used=(has_qmark or starts_with_qword)
+        heuristic_used=(has_qmark or starts_with_qword),
+        urgency=urgency
     )
 
 
