@@ -20,15 +20,15 @@ DEVICE = 0 if torch.cuda.is_available() else -1  # GPU falls verfügbar, sonst C
 # Schwellen
 SENT_TAU = 0.58      # Mindest-Score für pos/neg
 SENT_DELTA = 0.12    # Margin pos vs. neg (Neutral, wenn zu klein)
-QUESTION_TAU = 0.60  # Mindest-Score für "Frage"
+QUESTION_TAU = 0.80 # Mindest-Score für "Frage"
 TOPIC_TAU = 0.55     # Mindest-Score je Kategorie (multi-label)
 
 # Labels & Hypothesen-Templates (Deutsch)
 SENTIMENT_LABELS = ["positiv", "negativ"]
 SENTIMENT_TEMPLATE = "Dieser Text drückt eine {} Haltung gegenüber der Lehrveranstaltung aus."
 
-QUESTION_LABELS = ["Frage", "keine Frage"]
-QUESTION_TEMPLATE = "Dieser Text ist {} an die Dozentin oder den Dozenten."
+QUESTION_TEMPLATE = "Dieser Text stellt {} an die Dozentin oder den Dozenten."
+QUESTION_LABELS = ["eine Frage", "keine Frage"]
 
 TOPIC_TEMPLATE = "Dieser Text bezieht sich auf {}."
 
@@ -125,39 +125,35 @@ def analyze_one(text: str,
         "topics": {"applicable_set": applicable, "labels": topics}
     }
 
-
-
-
 def detect_question(text: str) -> QuestionResult:
     lowered = text.strip().lower()
-
     has_qmark = "?" in lowered
-    first_tokens = lowered.split()[:5]
-    q_words = {
-        "wie","warum","wieso","weshalb","wo","wann","wer","was",
-        "kann","können","könnte","soll","sollte","ist","sind","gibt","dürfen"
-    }
-    has_qword = any(w in q_words for w in first_tokens)
 
-    heuristic = has_qmark or has_qword  # <-- harte Bedingung
+    q_words = {
+        "wie", "warum", "wieso", "weshalb", "wo", "wann", "wer", "was",
+        "welche", "welcher", "welches",
+        "kann", "können", "könnte", "könnten",
+        "soll", "sollen", "sollte", "sollten",
+        "dürfen", "dürfte", "dürften",
+        "würde", "würden"
+    }
+    first_tokens = lowered.split()[:3]
+    starts_with_qword = any(w in q_words for w in first_tokens)
 
     out = zero_shot(text, QUESTION_LABELS, QUESTION_TEMPLATE, multi_label=False)
     scores = dict(zip(out["labels"], out["scores"]))
-    s_q = float(scores.get("Frage", 0.0))
+    s_q = float(scores.get("eine Frage", 0.0))
     s_s = float(scores.get("keine Frage", 0.0))
 
-
-    if heuristic:
-        is_q = (s_q >= QUESTION_TAU) and (s_q >= s_s)
-    else:
-        is_q = False
+    is_q = (s_q >= QUESTION_TAU) and (s_q > s_s) and (has_qmark or starts_with_qword)
 
     return QuestionResult(
         is_question=is_q,
         score_question=round(s_q, 4),
         score_statement=round(s_s, 4),
-        heuristic_used=heuristic
+        heuristic_used=(has_qmark or starts_with_qword)
     )
+
 
 def multi_label_topics(text: str, labels: List[str]) -> List[Dict[str, Any]]:
     out = zero_shot(text, labels, TOPIC_TEMPLATE, multi_label=True)
