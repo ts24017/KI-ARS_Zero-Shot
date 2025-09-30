@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/feedback")
@@ -34,7 +35,7 @@ public class FeedbackController {
                         fb.getSentiment(),
                         fb.getTopic(),
                         fb.isQuestion(),
-                        fb.getUrgency(),        // 👈 hier mitgeben
+                        fb.getUrgency(),
                         lecture.getDate().toString(),
                         lecture.getCourse().getName()
                 ))
@@ -51,19 +52,26 @@ public class FeedbackController {
         long total = feedbackList.size();
 
         Map<String, Long> sentimentCounts = feedbackList.stream()
-                .collect(java.util.stream.Collectors.groupingBy(
+                .collect(Collectors.groupingBy(
                         fb -> fb.getSentiment(),
-                        java.util.stream.Collectors.counting()
+                        Collectors.counting()
                 ));
 
         Map<String, Long> topicCounts = feedbackList.stream()
-                .collect(java.util.stream.Collectors.groupingBy(
+                .collect(Collectors.groupingBy(
                         fb -> fb.getTopic(),
-                        java.util.stream.Collectors.counting()
+                        Collectors.counting()
                 ));
 
         long questionCount = feedbackList.stream().filter(fb -> fb.isQuestion()).count();
         long statementCount = total - questionCount;
+
+        Map<String, Long> urgencyCounts = feedbackList.stream()
+                .filter(fb -> fb.isQuestion())
+                .collect(Collectors.groupingBy(
+                        fb -> fb.getUrgency(),
+                        Collectors.counting()
+                ));
 
         return new FeedbackAggregationResponse(
                 lecture.getId(),
@@ -73,7 +81,8 @@ public class FeedbackController {
                 sentimentCounts,
                 topicCounts,
                 questionCount,
-                statementCount
+                statementCount,
+                urgencyCounts
         );
     }
 
@@ -90,19 +99,26 @@ public class FeedbackController {
         long total = feedbackList.size();
 
         Map<String, Long> sentimentCounts = feedbackList.stream()
-                .collect(java.util.stream.Collectors.groupingBy(
+                .collect(Collectors.groupingBy(
                         fb -> fb.getSentiment(),
-                        java.util.stream.Collectors.counting()
+                        Collectors.counting()
                 ));
 
         Map<String, Long> topicCounts = feedbackList.stream()
-                .collect(java.util.stream.Collectors.groupingBy(
+                .collect(Collectors.groupingBy(
                         fb -> fb.getTopic(),
-                        java.util.stream.Collectors.counting()
+                        Collectors.counting()
                 ));
 
         long questionCount = feedbackList.stream().filter(fb -> fb.isQuestion()).count();
         long statementCount = total - questionCount;
+
+        Map<String, Long> urgencyCounts = feedbackList.stream()
+                .filter(fb -> fb.isQuestion())
+                .collect(Collectors.groupingBy(
+                        fb -> fb.getUrgency(),
+                        Collectors.counting()
+                ));
 
         String courseName = lectures.isEmpty() ? "Unbekannt" : lectures.get(0).getCourse().getName();
 
@@ -114,11 +130,10 @@ public class FeedbackController {
                 sentimentCounts,
                 topicCounts,
                 questionCount,
-                statementCount
+                statementCount,
+                urgencyCounts
         );
     }
-
-
-
 }
+
 

@@ -12,13 +12,15 @@ public class FeedbackAggregationResponse {
     private Map<String, Long> topicCounts;
     private long questionCount;
     private long statementCount;
+    private Map<String, Long> urgencyCounts;  // 👈 NEU
 
     public FeedbackAggregationResponse() {}
 
     public FeedbackAggregationResponse(Long lectureId, String lectureDate, String courseName,
                                        long totalFeedback, Map<String, Long> sentimentCounts,
                                        Map<String, Long> topicCounts,
-                                       long questionCount, long statementCount) {
+                                       long questionCount, long statementCount,
+                                       Map<String, Long> urgencyCounts) {
         this.lectureId = lectureId;
         this.lectureDate = lectureDate;
         this.courseName = courseName;
@@ -27,6 +29,7 @@ public class FeedbackAggregationResponse {
         this.topicCounts = topicCounts;
         this.questionCount = questionCount;
         this.statementCount = statementCount;
+        this.urgencyCounts = urgencyCounts;
     }
 
     public Long getLectureId() { return lectureId; }
@@ -52,5 +55,9 @@ public class FeedbackAggregationResponse {
 
     public long getStatementCount() { return statementCount; }
     public void setStatementCount(long statementCount) { this.statementCount = statementCount; }
+
+    public Map<String, Long> getUrgencyCounts() { return urgencyCounts; }
+    public void setUrgencyCounts(Map<String, Long> urgencyCounts) { this.urgencyCounts = urgencyCounts; }
 }
+
 
