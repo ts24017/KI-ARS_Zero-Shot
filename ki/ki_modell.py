@@ -18,8 +18,8 @@ MODEL_NAME = "joeddav/xlm-roberta-large-xnli"
 DEVICE = 0 if torch.cuda.is_available() else -1  # GPU falls verfügbar, sonst CPU
 
 # Schwellen
-SENT_TAU = 0.58      # Mindest-Score für pos/neg
-SENT_DELTA = 0.12    # Margin pos vs. neg (Neutral, wenn zu klein)
+SENT_TAU = 0.50    # Mindest-Score für pos/neg
+SENT_DELTA = 0.15    # Margin pos vs. neg (Neutral, wenn zu klein)
 QUESTION_TAU = 0.80 # Mindest-Score für "Frage"
 TOPIC_TAU = 0.55     # Mindest-Score je Kategorie (multi-label)
 
@@ -36,15 +36,79 @@ TOPIC_TEMPLATE = "Dieser Text bezieht sich auf {}."
 QUESTION_TOPICS = [
     "Organisation und Ablauf",
     "Inhalt und Verständnis",
-    "Didaktik und Methoden",
-    "Materialien und Ressourcen"
+    "Materialien und Ressourcen",
+    "Arbeitsbelastung & Lerntempo",
+    "Technik und Ausstattung"
 ]
+
 NONQUESTION_TOPICS = [
     "Organisation und Ablauf",
     "Inhalt und Verständnis",
-    "Didaktik und Methoden",
-    "Materialien und Ressourcen"
+    "Materialien und Ressourcen",
+    "Arbeitsbelastung & Lerntempo",
+    "Technik und Ausstattung"
 ]
+
+ORG_KEYWORDS = [
+    "ablauf", "gliederung", "struktur", "zeitplan", "organisation",
+    "termin", "frist"
+]
+
+CONTENT_KEYWORDS = [
+    "erklärung", "definition", "fachbegriff", "thema", "inhalt",
+    "konzept", "theorie"
+]
+
+MATERIAL_KEYWORDS = [
+    "folien", "skript", "unterlagen", "literatur", "moodle",
+    "canvas", "download", "pdf", "aufzeichnung", "video"
+]
+
+WORKLOAD_KEYWORDS = [
+    "tempo", "geschwindigkeit", "umfang",
+    "arbeitsbelastung", "stoffmenge", "pensum"
+]
+
+TECH_KEYWORDS = [
+    "ton", "mikro", "kamera", "beamer", "projektor", "internet",
+    "wlan", "verbindung", "abgestürzt", "störung", "ausfall"
+]
+
+def boost_topic_scores(text: str, topic_scores: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+    BOOST_VALUE = 0.20
+    lowered = text.lower()
+
+    scores_dict = {item["label"]: item["score"] for item in topic_scores}
+
+    if any(w in lowered for w in ORG_KEYWORDS):
+        if "Organisation und Ablauf" in scores_dict:
+            scores_dict["Organisation und Ablauf"] += BOOST_VALUE
+
+    if any(w in lowered for w in CONTENT_KEYWORDS):
+        if "Inhalt und Verständnis" in scores_dict:
+            scores_dict["Inhalt und Verständnis"] += BOOST_VALUE
+
+    if any(w in lowered for w in MATERIAL_KEYWORDS):
+        if "Materialien und Ressourcen" in scores_dict:
+            scores_dict["Materialien und Ressourcen"] += BOOST_VALUE
+
+    if any(w in lowered for w in WORKLOAD_KEYWORDS):
+        # Sucht den passenden Kategorienamen (da er bei Fragen/Aussagen leicht abweicht)
+        workload_key = next((k for k in scores_dict if "Arbeitsbelastung" in k or "Arbeitsaufwand" in k), None)
+        if workload_key:
+            scores_dict[workload_key] += BOOST_VALUE
+
+    if any(w in lowered for w in TECH_KEYWORDS):
+        if "Technik und Ausstattung" in scores_dict:
+            scores_dict["Technik und Ausstattung"] += BOOST_VALUE
+
+    boosted_scores = [{"label": k, "score": v} for k, v in scores_dict.items()]
+
+    boosted_scores.sort(key=lambda x: x["score"], reverse=True)
+
+    return boosted_scores
+
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=False)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
@@ -95,15 +159,25 @@ def zero_shot(text: str, candidate_labels: List[str], template: str, multi_label
 
 def decide_sentiment(text: str) -> SentimentResult:
     out = zero_shot(text, SENTIMENT_LABELS, SENTIMENT_TEMPLATE, multi_label=False)
-    scores = dict(zip(out["labels"], out["scores"]))  # absteigend sortiert
+    scores = dict(zip(out["labels"], out["scores"]))
     s_pos = float(scores.get("positiv", 0.0))
     s_neg = float(scores.get("negativ", 0.0))
-    max_score = max(s_pos, s_neg)
 
-    if (max_score < SENT_TAU) or (abs(s_pos - s_neg) < SENT_DELTA):
+    # Lexikon-Booster
+    lowered = text.lower()
+    POS_WORDS = {"super", "gut", "hervorragend", "verständlich", "hilfreich", "strukturiert", "toll"}
+    NEG_WORDS = {"schlecht", "chaotisch", "unverständlich", "langweilig", "kompliziert", "katastrophal"}
+    if any(w in lowered for w in POS_WORDS):
+        s_pos += 0.1
+    if any(w in lowered for w in NEG_WORDS):
+        s_neg += 0.1
+
+    # Entscheidung
+    confidence = abs(s_pos - s_neg)
+    if confidence < SENT_DELTA:   # unsicher → neutral
         label = "neutral"
     else:
-        label = "positiv" if s_pos >= s_neg else "negativ"
+        label = "positiv" if s_pos > s_neg else "negativ"
 
     return SentimentResult(label=label, score_pos=round(s_pos, 4), score_neg=round(s_neg, 4))
 
@@ -114,11 +188,20 @@ def analyze_one(text: str,
     qres = detect_question(text)
 
     if qres.is_question:
+        max_score = max(sentiment.score_pos, sentiment.score_neg)
+        diff_score = abs(sentiment.score_pos - sentiment.score_neg)
+
+        if max_score < 0.65 or diff_score < 0.20:
+            sentiment.label = "neutral"
+
         topics = multi_label_topics(text, question_topics)
         applicable = "question"
     else:
         topics = multi_label_topics(text, nonquestion_topics)
         applicable = "nonquestion"
+
+    if topics:
+        topics = boost_topic_scores(text, topics)
 
     return {
         "text": text,
@@ -126,6 +209,7 @@ def analyze_one(text: str,
         "question": qres.dict(),
         "topics": {"applicable_set": applicable, "labels": topics}
     }
+
 
 def detect_question(text: str) -> QuestionResult:
     lowered = text.strip().lower()
@@ -136,7 +220,7 @@ def detect_question(text: str) -> QuestionResult:
         "welche", "welcher", "welches",
         "kann", "können", "könnte", "könnten",
         "soll", "sollen", "sollte", "sollten",
-        "dürfen", "dürfte", "dürften",
+        "dümerfen", "dürfte", "dürften",
         "würde", "würden"
     }
     first_tokens = lowered.split()[:3]
@@ -151,9 +235,9 @@ def detect_question(text: str) -> QuestionResult:
 
     urgency = None
     if is_q:
-        if any(w in lowered for w in ["heute", "morgen", "sofort", "dringend", "gleich"]):
+        if any(w in lowered for w in ["heute", "morgen", "sofort", "dringend", "gleich","endlich", "wenig"]):
             urgency = "hoch"
-        elif any(w in lowered for w in ["bald", "demnächst", "nächste", "nächsten", "nächster", "kurzfristig"]):
+        elif any(w in lowered for w in ["bald", "demnächst", "nächste", "nächsten", "nächster", "kurzfristig", "zeitnah", "die Tage","kommende"]):
             urgency = "mittel"
         else:
             urgency = "gering"
