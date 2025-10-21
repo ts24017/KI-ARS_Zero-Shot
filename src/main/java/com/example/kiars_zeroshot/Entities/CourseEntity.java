@@ -3,6 +3,8 @@ package com.example.kiars_zeroshot.Entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -17,7 +19,21 @@ public class CourseEntity {
 
     private String name;
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
-    private List<LectureEntity> lectures;
+    @ManyToOne
+    @JoinColumn(name = "teacher_id")
+    private UserEntity teacher;
+
+    @ManyToMany
+    @JoinTable(
+            name = "course_students",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "student_id")
+    )
+    private List<UserEntity> students = new ArrayList<>();
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LectureEntity> lectures = new ArrayList<>();
+
 }
+
 
