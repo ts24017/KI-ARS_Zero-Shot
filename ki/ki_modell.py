@@ -55,23 +55,23 @@ ORG_KEYWORDS = [
 ]
 
 CONTENT_KEYWORDS = [
-    "erklärung", "definition", "fachbegriff", "thema", "inhalt",
-    "konzept", "theorie"
+    "erklärung", "fachbegriff", "thema", "inhalt",
+    "konzept", "theorie", "verständnis"
 ]
 
 MATERIAL_KEYWORDS = [
-    "folien", "skript", "unterlagen", "literatur", "moodle",
-    "canvas", "download", "pdf", "aufzeichnung", "video"
+    "folien", "skript", "unterlagen", "literatur",
+    "formelsammlung", "pdf", "aufzeichnung"
 ]
 
 WORKLOAD_KEYWORDS = [
     "tempo", "geschwindigkeit", "umfang",
-    "arbeitsbelastung", "stoffmenge", "pensum"
+    "arbeitsbelastung", "stoffmenge", "aufwand", "dichte"
 ]
 
 TECH_KEYWORDS = [
-    "ton", "mikro", "kamera", "beamer", "projektor", "internet",
-    "wlan", "verbindung", "abgestürzt", "störung", "ausfall"
+    "ton", "kamera", "projektor",
+    "wlan", "abgestürzt", "störung", "ausfall"
 ]
 
 def boost_topic_scores(text: str, topic_scores: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -166,7 +166,7 @@ def decide_sentiment(text: str) -> SentimentResult:
     # Lexikon-Booster
     lowered = text.lower()
     POS_WORDS = {"super", "gut", "hervorragend", "verständlich", "hilfreich", "strukturiert", "toll"}
-    NEG_WORDS = {"schlecht", "chaotisch", "unverständlich", "langweilig", "kompliziert", "katastrophal"}
+    NEG_WORDS = {"schlecht", "unverständlich", "langweilig", "kompliziert", "katastrophal"}
     if any(w in lowered for w in POS_WORDS):
         s_pos += 0.1
     if any(w in lowered for w in NEG_WORDS):
@@ -235,7 +235,7 @@ def detect_question(text: str) -> QuestionResult:
 
     urgency = None
     if is_q:
-        if any(w in lowered for w in ["heute", "morgen", "sofort", "dringend", "gleich","endlich", "wenig"]):
+        if any(w in lowered for w in ["heute", "morgen", "sofort", "dringend", "gleich","endlich"]):
             urgency = "hoch"
         elif any(w in lowered for w in ["bald", "demnächst", "nächste", "nächsten", "nächster", "kurzfristig", "zeitnah", "die Tage","kommende"]):
             urgency = "mittel"

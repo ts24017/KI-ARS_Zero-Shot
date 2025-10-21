@@ -16,5 +16,6 @@ public class FeedbackResponse {
     private String urgency;
     private String lectureDate;
     private String courseName;
+    private Long studentId;
 }
 

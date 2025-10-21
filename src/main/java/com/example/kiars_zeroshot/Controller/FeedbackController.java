@@ -2,6 +2,7 @@ package com.example.kiars_zeroshot.Controller;
 
 import com.example.kiars_zeroshot.DTO.FeedbackAggregationResponse;
 import com.example.kiars_zeroshot.DTO.FeedbackResponse;
+import com.example.kiars_zeroshot.Entities.FeedbackEntity;
 import com.example.kiars_zeroshot.Entities.LectureEntity;
 import com.example.kiars_zeroshot.Repositories.FeedbackRepository;
 import com.example.kiars_zeroshot.Repositories.LectureRepository;
@@ -37,7 +38,8 @@ public class FeedbackController {
                         fb.isQuestion(),
                         fb.getUrgency(),
                         lecture.getDate().toString(),
-                        lecture.getCourse().getName()
+                        lecture.getCourse().getName(),
+                        fb.getStudent() != null ? fb.getStudent().getId() : null // 🔹 hier neu
                 ))
                 .toList();
     }
@@ -48,30 +50,20 @@ public class FeedbackController {
                 .orElseThrow(() -> new RuntimeException("Lecture not found"));
 
         var feedbackList = feedbackRepo.findByLecture(lecture);
-
         long total = feedbackList.size();
 
         Map<String, Long> sentimentCounts = feedbackList.stream()
-                .collect(Collectors.groupingBy(
-                        fb -> fb.getSentiment(),
-                        Collectors.counting()
-                ));
+                .collect(Collectors.groupingBy(fb -> fb.getSentiment(), Collectors.counting()));
 
         Map<String, Long> topicCounts = feedbackList.stream()
-                .collect(Collectors.groupingBy(
-                        fb -> fb.getTopic(),
-                        Collectors.counting()
-                ));
+                .collect(Collectors.groupingBy(fb -> fb.getTopic(), Collectors.counting()));
 
-        long questionCount = feedbackList.stream().filter(fb -> fb.isQuestion()).count();
+        long questionCount = feedbackList.stream().filter(FeedbackEntity::isQuestion).count();
         long statementCount = total - questionCount;
 
         Map<String, Long> urgencyCounts = feedbackList.stream()
-                .filter(fb -> fb.isQuestion())
-                .collect(Collectors.groupingBy(
-                        fb -> fb.getUrgency(),
-                        Collectors.counting()
-                ));
+                .filter(FeedbackEntity::isQuestion)
+                .collect(Collectors.groupingBy(fb -> fb.getUrgency(), Collectors.counting()));
 
         return new FeedbackAggregationResponse(
                 lecture.getId(),
@@ -84,6 +76,28 @@ public class FeedbackController {
                 statementCount,
                 urgencyCounts
         );
+    }
+
+    @GetMapping("/course/{courseId}")
+    public List<FeedbackResponse> getFeedbackForCourse(@PathVariable Long courseId) {
+        var lectures = lectureRepo.findAll().stream()
+                .filter(l -> l.getCourse().getId().equals(courseId))
+                .toList();
+
+        return lectures.stream()
+                .flatMap(l -> feedbackRepo.findByLecture(l).stream()
+                        .map(fb -> new FeedbackResponse(
+                                fb.getId(),
+                                fb.getText(),
+                                fb.getSentiment(),
+                                fb.getTopic(),
+                                fb.isQuestion(),
+                                fb.getUrgency(),
+                                l.getDate().toString(),
+                                l.getCourse().getName(),
+                                fb.getStudent() != null ? fb.getStudent().getId() : null // 🔹 neu
+                        )))
+                .toList();
     }
 
     @GetMapping("/course/{courseId}/summary")
@@ -133,7 +147,13 @@ public class FeedbackController {
                 statementCount,
                 urgencyCounts
         );
-    }
+
 }
+
+}
+
+
+
+
 
 

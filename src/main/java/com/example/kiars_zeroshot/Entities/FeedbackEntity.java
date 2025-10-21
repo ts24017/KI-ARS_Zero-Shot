@@ -26,6 +26,11 @@ public class FeedbackEntity {
     @JoinColumn(name = "lecture_id")
     private LectureEntity lecture;
 
+    @ManyToOne
+    @JoinColumn(name = "student_id")
+    private UserEntity student;
+
+
     public FeedbackEntity(FeedbackClassification fc) {
         this.text = fc.getText();
         this.sentiment = fc.getSentiment();
