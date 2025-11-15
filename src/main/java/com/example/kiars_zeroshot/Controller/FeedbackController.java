@@ -1,12 +1,15 @@
 package com.example.kiars_zeroshot.Controller;
 
-import com.example.kiars_zeroshot.DTO.FeedbackAggregationResponse;
-import com.example.kiars_zeroshot.DTO.FeedbackResponse;
+import com.example.kiars_zeroshot.DTO.*;
 import com.example.kiars_zeroshot.Entities.FeedbackEntity;
 import com.example.kiars_zeroshot.Entities.LectureEntity;
+import com.example.kiars_zeroshot.Entities.UserEntity;
 import com.example.kiars_zeroshot.Repositories.FeedbackRepository;
 import com.example.kiars_zeroshot.Repositories.LectureRepository;
+import com.example.kiars_zeroshot.Repositories.UserRepository;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -18,10 +21,14 @@ public class FeedbackController {
 
     private final FeedbackRepository feedbackRepo;
     private final LectureRepository lectureRepo;
+    private final UserRepository userRepo;
+    private final RestTemplate restTemplate;
 
-    public FeedbackController(FeedbackRepository feedbackRepo, LectureRepository lectureRepo) {
+    public FeedbackController(FeedbackRepository feedbackRepo, LectureRepository lectureRepo, UserRepository userRepo, RestTemplate restTemplate) {
         this.feedbackRepo = feedbackRepo;
         this.lectureRepo = lectureRepo;
+        this.userRepo = userRepo;
+        this.restTemplate = restTemplate;
     }
 
     @GetMapping("/lecture/{lectureId}")
@@ -148,7 +155,44 @@ public class FeedbackController {
                 urgencyCounts
         );
 
+
+
 }
+
+    @PostMapping("/lecture/{lectureId}")
+    public ResponseEntity<?> submitFeedback(
+            @PathVariable Long lectureId,
+            @RequestBody FeedbackRequest request
+    ) {
+        LectureEntity lecture = lectureRepo.findById(lectureId)
+                .orElseThrow(() -> new RuntimeException("Lecture not found"));
+        UserEntity student = userRepo.findById(request.getStudentId())
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        FeedbackResult result = restTemplate.postForObject(
+                "http://localhost:8000/classify",
+                request,
+                FeedbackResult.class
+        );
+
+        if (result == null || result.getSentiment() == null) {
+            return ResponseEntity.badRequest().body("Fehler bei der KI-Auswertung");
+        }
+
+        FeedbackClassification fc = new FeedbackClassification();
+        fc.setText(result.getText());
+        fc.setSentiment(result.getSentiment().getLabel());
+        fc.setQuestion(result.getQuestion().isQuestion());
+        fc.setUrgency(result.getQuestion().getUrgency());
+        fc.setTopic(result.getTopics().getLabels().get(0).getLabel());
+
+        FeedbackEntity entity = new FeedbackEntity(fc);
+        entity.setLecture(lecture);
+        entity.setStudent(student);
+        feedbackRepo.save(entity);
+
+        return ResponseEntity.ok("Feedback erfolgreich gesendet und gespeichert.");
+    }
 
 }
 
