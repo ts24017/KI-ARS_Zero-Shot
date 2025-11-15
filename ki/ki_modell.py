@@ -15,15 +15,19 @@ def split_sentences(text: str) -> List[str]:
 app = FastAPI(title="ARS Zero-Shot Service (DE)", version="0.1.0")
 
 MODEL_NAME = "joeddav/xlm-roberta-large-xnli"
-DEVICE = 0 if torch.cuda.is_available() else -1  # GPU falls verfügbar, sonst CPU
+DEVICE = 0 if torch.cuda.is_available() else -1
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=False)
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
+
+zsc = pipeline("zero-shot-classification", model=model, tokenizer=tokenizer, device=DEVICE)
 
 # Schwellen
-SENT_TAU = 0.50    # Mindest-Score für pos/neg
-SENT_DELTA = 0.15    # Margin pos vs. neg (Neutral, wenn zu klein)
-QUESTION_TAU = 0.80 # Mindest-Score für "Frage"
-TOPIC_TAU = 0.55     # Mindest-Score je Kategorie (multi-label)
+SENT_DELTA = 0.15
+QUESTION_TAU = 0.80
+TOPIC_TAU = 0.55
 
-# Labels & Hypothesen-Templates (Deutsch)
+# Labels
 SENTIMENT_LABELS = ["positiv", "negativ"]
 SENTIMENT_TEMPLATE = "Dieser Text drückt eine {} Haltung gegenüber der Lehrveranstaltung aus."
 
@@ -32,7 +36,6 @@ QUESTION_LABELS = ["eine Frage", "keine Frage"]
 
 TOPIC_TEMPLATE = "Dieser Text bezieht sich auf {}."
 
-# Kategorien (anpassbar)
 QUESTION_TOPICS = [
     "Organisation und Ablauf",
     "Inhalt und Verständnis",
@@ -41,44 +44,17 @@ QUESTION_TOPICS = [
     "Technik und Ausstattung"
 ]
 
-NONQUESTION_TOPICS = [
-    "Organisation und Ablauf",
-    "Inhalt und Verständnis",
-    "Materialien und Ressourcen",
-    "Arbeitsbelastung & Lerntempo",
-    "Technik und Ausstattung"
-]
+NONQUESTION_TOPICS = QUESTION_TOPICS.copy()
 
-ORG_KEYWORDS = [
-    "ablauf", "gliederung", "struktur", "zeitplan", "organisation",
-    "termin", "frist"
-]
-
-CONTENT_KEYWORDS = [
-    "erklärung", "fachbegriff", "thema", "inhalt",
-    "konzept", "theorie", "verständnis"
-]
-
-MATERIAL_KEYWORDS = [
-    "folien", "skript", "unterlagen", "literatur",
-    "formelsammlung", "pdf", "aufzeichnung"
-]
-
-WORKLOAD_KEYWORDS = [
-    "tempo", "geschwindigkeit", "umfang",
-    "arbeitsbelastung", "stoffmenge", "aufwand", "dichte"
-]
-
-TECH_KEYWORDS = [
-    "ton", "kamera", "projektor",
-    "wlan", "abgestürzt", "störung", "ausfall"
-]
+ORG_KEYWORDS = ["ablauf", "gliederung", "struktur", "zeitplan", "organisation", "termin", "frist"]
+CONTENT_KEYWORDS = ["erklärung", "fachbegriff", "thema", "inhalt", "konzept", "theorie", "verständnis"]
+MATERIAL_KEYWORDS = ["folien", "skript", "unterlagen", "literatur", "formelsammlung", "pdf", "aufzeichnung"]
+WORKLOAD_KEYWORDS = ["tempo", "geschwindigkeit", "umfang", "arbeitsbelastung", "stoffmenge", "aufwand", "dichte"]
+TECH_KEYWORDS = ["ton", "kamera", "projektor", "wlan", "abgestürzt", "störung", "ausfall"]
 
 def boost_topic_scores(text: str, topic_scores: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-
     BOOST_VALUE = 0.20
     lowered = text.lower()
-
     scores_dict = {item["label"]: item["score"] for item in topic_scores}
 
     if any(w in lowered for w in ORG_KEYWORDS):
@@ -94,7 +70,6 @@ def boost_topic_scores(text: str, topic_scores: List[Dict[str, Any]]) -> List[Di
             scores_dict["Materialien und Ressourcen"] += BOOST_VALUE
 
     if any(w in lowered for w in WORKLOAD_KEYWORDS):
-        # Sucht den passenden Kategorienamen (da er bei Fragen/Aussagen leicht abweicht)
         workload_key = next((k for k in scores_dict if "Arbeitsbelastung" in k or "Arbeitsaufwand" in k), None)
         if workload_key:
             scores_dict[workload_key] += BOOST_VALUE
@@ -104,28 +79,14 @@ def boost_topic_scores(text: str, topic_scores: List[Dict[str, Any]]) -> List[Di
             scores_dict["Technik und Ausstattung"] += BOOST_VALUE
 
     boosted_scores = [{"label": k, "score": v} for k, v in scores_dict.items()]
-
     boosted_scores.sort(key=lambda x: x["score"], reverse=True)
-
     return boosted_scores
 
-
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=False)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
-
-zsc = pipeline(
-    "zero-shot-classification",
-    model=model,
-    tokenizer=tokenizer,
-    device=DEVICE
-)
-
-# ------- Schemas -------
 class ClassifyRequest(BaseModel):
     text: str
     question_topics: Optional[List[str]] = None
     nonquestion_topics: Optional[List[str]] = None
-    by_sentence: bool = False   # NEU
+    by_sentence: bool = False
 
 class SentimentResult(BaseModel):
     label: str
@@ -139,15 +100,9 @@ class QuestionResult(BaseModel):
     heuristic_used: bool
     urgency: Optional[str] = None
 
-
 class TopicResult(BaseModel):
     applicable_set: str
     labels: List[Dict[str, Any]]
-
-class ClassifyResponse(BaseModel):
-    sentiment: SentimentResult
-    question: QuestionResult
-    topics: TopicResult
 
 def zero_shot(text: str, candidate_labels: List[str], template: str, multi_label: bool = False):
     return zsc(
@@ -163,53 +118,22 @@ def decide_sentiment(text: str) -> SentimentResult:
     s_pos = float(scores.get("positiv", 0.0))
     s_neg = float(scores.get("negativ", 0.0))
 
-    # Lexikon-Booster
     lowered = text.lower()
     POS_WORDS = {"super", "gut", "hervorragend", "verständlich", "hilfreich", "strukturiert", "toll"}
     NEG_WORDS = {"schlecht", "unverständlich", "langweilig", "kompliziert", "katastrophal"}
+
     if any(w in lowered for w in POS_WORDS):
         s_pos += 0.1
     if any(w in lowered for w in NEG_WORDS):
         s_neg += 0.1
 
-    # Entscheidung
     confidence = abs(s_pos - s_neg)
-    if confidence < SENT_DELTA:   # unsicher → neutral
+    if confidence < SENT_DELTA:
         label = "neutral"
     else:
         label = "positiv" if s_pos > s_neg else "negativ"
 
     return SentimentResult(label=label, score_pos=round(s_pos, 4), score_neg=round(s_neg, 4))
-
-def analyze_one(text: str,
-                question_topics: List[str],
-                nonquestion_topics: List[str]) -> Dict[str, Any]:
-    sentiment = decide_sentiment(text)
-    qres = detect_question(text)
-
-    if qres.is_question:
-        max_score = max(sentiment.score_pos, sentiment.score_neg)
-        diff_score = abs(sentiment.score_pos - sentiment.score_neg)
-
-        if max_score < 0.65 or diff_score < 0.20:
-            sentiment.label = "neutral"
-
-        topics = multi_label_topics(text, question_topics)
-        applicable = "question"
-    else:
-        topics = multi_label_topics(text, nonquestion_topics)
-        applicable = "nonquestion"
-
-    if topics:
-        topics = boost_topic_scores(text, topics)
-
-    return {
-        "text": text,
-        "sentiment": sentiment.dict(),
-        "question": qres.dict(),
-        "topics": {"applicable_set": applicable, "labels": topics}
-    }
-
 
 def detect_question(text: str) -> QuestionResult:
     lowered = text.strip().lower()
@@ -220,9 +144,10 @@ def detect_question(text: str) -> QuestionResult:
         "welche", "welcher", "welches",
         "kann", "können", "könnte", "könnten",
         "soll", "sollen", "sollte", "sollten",
-        "dümerfen", "dürfte", "dürften",
+        "dürfen", "dürfte", "dürften",
         "würde", "würden"
     }
+
     first_tokens = lowered.split()[:3]
     starts_with_qword = any(w in q_words for w in first_tokens)
 
@@ -235,9 +160,9 @@ def detect_question(text: str) -> QuestionResult:
 
     urgency = None
     if is_q:
-        if any(w in lowered for w in ["heute", "morgen", "sofort", "dringend", "gleich","endlich"]):
+        if any(w in lowered for w in ["heute", "morgen", "sofort", "dringend", "gleich", "endlich"]):
             urgency = "hoch"
-        elif any(w in lowered for w in ["bald", "demnächst", "nächste", "nächsten", "nächster", "kurzfristig", "zeitnah", "die Tage","kommende"]):
+        elif any(w in lowered for w in ["bald", "demnächst", "nächste", "nächsten", "nächster", "kurzfristig", "zeitnah", "die tage", "kommende"]):
             urgency = "mittel"
         else:
             urgency = "gering"
@@ -250,17 +175,44 @@ def detect_question(text: str) -> QuestionResult:
         urgency=urgency
     )
 
-
 def multi_label_topics(text: str, labels: List[str]) -> List[Dict[str, Any]]:
     out = zero_shot(text, labels, TOPIC_TEMPLATE, multi_label=True)
     pairs = list(zip(out["labels"], out["scores"]))
     pairs.sort(key=lambda x: x[1], reverse=True)
+
     kept = [{"label": l, "score": round(float(s), 4)} for l, s in pairs if s >= TOPIC_TAU]
+
     if not kept and pairs:
         l, s = pairs[0]
         kept = [{"label": l, "score": round(float(s), 4)}]
+
     return kept
 
+def analyze_one(text: str, question_topics: List[str], nonquestion_topics: List[str]) -> Dict[str, Any]:
+    sentiment = decide_sentiment(text)
+    qres = detect_question(text)
+
+    if qres.is_question:
+        max_score = max(sentiment.score_pos, sentiment.score_neg)
+        diff_score = abs(sentiment.score_pos - sentiment.score_neg)
+        if max_score < 0.65 or diff_score < 0.20:
+            sentiment.label = "neutral"
+        topics = multi_label_topics(text, question_topics)
+        applicable = "question"
+    else:
+        topics = multi_label_topics(text, nonquestion_topics)
+        applicable = "nonquestion"
+
+    if topics:
+        topics = boost_topic_scores(text, topics)
+        topics = topics[:1]  # <<---- Nur Anzeige Top-1
+
+    return {
+        "text": text,
+        "sentiment": sentiment.dict(),
+        "question": qres.dict(),
+        "topics": {"applicable_set": applicable, "labels": topics}
+    }
 
 @app.post("/classify")
 def classify(req: ClassifyRequest):
@@ -295,5 +247,6 @@ def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("ki.ki_modell:app", host="0.0.0.0", port=8000, reload=True)
+
 
 
