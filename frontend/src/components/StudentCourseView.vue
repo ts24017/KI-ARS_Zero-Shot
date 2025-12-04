@@ -14,11 +14,21 @@ onMounted(async () => {
 function goToCourse(courseId) {
   router.push(`/student/course/${courseId}`);
 }
+
+function logout() {
+  alert("Du wurdest erfolgreich ausgeloggt!");
+  localStorage.removeItem("user");
+  router.push("/login");
+}
 </script>
 
 <template>
   <div class="dashboard">
-    <h1>Hallo, {{ user.username }}</h1>
+    <div class="header">
+      <h1>Hallo, {{ user.username }}</h1>
+      <button class="logout-btn" @click="logout">Abmelden</button>
+    </div>
+
     <h2>Deine Kurse</h2>
 
     <ul class="course-list">
@@ -41,6 +51,28 @@ function goToCourse(courseId) {
   margin: 80px auto;
   font-family: "Inter", Arial, sans-serif;
   padding: 20px;
+  position: relative;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logout-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
 }
 
 h1 {
@@ -75,3 +107,4 @@ h2 {
   background: #e0f2fe;
 }
 </style>
+
