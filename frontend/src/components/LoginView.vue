@@ -63,12 +63,46 @@ async function handleLogin() {
       </form>
 
       <p v-if="error" class="error">{{ error }}</p>
+
+      <div class="login-info">
+        <h3>Demo-Accounts</h3>
+
+        <div class="login-roles">
+          <div class="login-role-block">
+            <h4>Dozent</h4>
+            <div class="line">
+              <span class="label">Benutzername:</span>
+              <span class="value">Dr. Herrmann</span>
+            </div>
+            <div class="line">
+              <span class="label">Passwort:</span>
+              <span class="value">1234</span>
+            </div>
+          </div>
+
+          <div class="login-role-block">
+            <h4>Studierende</h4>
+            <div class="line">
+              <span class="label">Max</span>
+              <span class="value">Passwort: 1234</span>
+            </div>
+            <div class="line">
+              <span class="label">Laura</span>
+              <span class="value">Passwort: 1234</span>
+            </div>
+            <div class="line">
+              <span class="label">Tobias</span>
+              <span class="value">Passwort: 1234</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
 
 <style scoped>
-
 .login-page {
   height: 100vh;
   display: flex;
@@ -82,11 +116,10 @@ async function handleLogin() {
   width: 380px;
   background: white;
   border-radius: 12px;
-  padding: 36px 40px;
+  padding: 36px 40px 28px 40px;
   text-align: center;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
-
 
 .login-container h2 {
   color: #1e3a8a;
@@ -112,7 +145,6 @@ async function handleLogin() {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
-
 .login-container button {
   width: 100%;
   padding: 11px;
@@ -136,6 +168,68 @@ async function handleLogin() {
   font-size: 14px;
   margin-top: 10px;
 }
+
+.login-info {
+  margin-top: 22px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  text-align: left;
+  font-size: 13px;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+}
+
+.login-info h3 {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: left;
+}
+
+.login-info p {
+  margin: 0 0 10px 0;
+}
+
+.login-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-role-block {
+  padding-top: 4px;
+  border-top: 1px dashed #cbd5e1;
+}
+
+.login-role-block:first-of-type {
+  border-top: none;
+}
+
+.login-role-block h4 {
+  font-size: 13px;
+  margin: 4px 0 4px 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  margin: 2px 0;
+}
+
+.label {
+  font-weight: 500;
+  color: #111827;
+}
+
+.value {
+  color: #111827;
+}
 </style>
+
 
 
