@@ -44,7 +44,6 @@ onMounted(loadData);
 
 const lectures = ref([]);
 
-/** Lectures laden und NACH DATUM sortieren (wichtig für 1-basierte Nummerierung) */
 async function loadLectures() {
   const res = await fetch(`/api/course/${courseId.value}/lectures`);
   if (res.ok) {
@@ -66,19 +65,16 @@ onMounted(async () => {
   await loadLectures();
 });
 
-/** Datum robust normalisieren → "YYYY-MM-DD" */
 function normalizeDate(d) {
   if (!d) return null;
   const asDate = new Date(d);
   if (!isNaN(asDate)) {
     return asDate.toISOString().slice(0, 10);
   }
-  // Fallback: String schon im richtigen Format oder ähnlich
   if (typeof d === "string") return d.slice(0, 10);
   return null;
 }
 
-/** Map: Lecture-ID -> laufende Nummer (1-basiert) */
 const lectureIndexMap = computed(() => {
   const map = {};
   lectures.value.forEach((lec, idx) => {
