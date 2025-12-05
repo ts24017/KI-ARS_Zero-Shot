@@ -11,7 +11,7 @@ Quick Start
 
 1. Clone this repository.
 
-2. Follow the  instructions in the `/ki` folder to install and run the AI service.
+2. Follow the [AI Service README](ki/README.md) instructions in the `/ki` folder to install and run the AI service.
 
 3. Follow the  instructions in the `/backend` folder to install and start the Spring Boot backend.
 

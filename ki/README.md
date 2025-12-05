@@ -13,11 +13,11 @@ The service analyzes each feedback text and classifies it by:
 ---
 
 ## Quick Start
+The commands below must be executed in a terminal (macOS/Linux) or PowerShell (Windows).
 
-1. Navigate into the `/ki` folder:
+1. Navigate to the project root
 
-       cd /ki
-
+       cd /KI-ARS_Zero-Shot
 
 2. Install dependencies:
 
@@ -27,9 +27,9 @@ The service analyzes each feedback text and classifies it by:
 
         pip install -r requirements.txt
 
-3. Start the FastAPI service:
+3. Start the FastAPI service with:
 
-       python ki_modell.py
+       python3 -m uvicorn ki.ki_modell:app --host 0.0.0.0 --port 8000 --reload
 
 The API will run on http://localhost:8000
 
