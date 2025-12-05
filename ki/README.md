@@ -2,7 +2,7 @@
 
 This directory contains the AI microservice used by the KI-ARS system for automatic text classification. 
 
-It is implemented in Python using  the pre-trained **XLM-RoBERTa** model for zero-shot learning.
+It is implemented in Python and uses the pre-trained **XLM-RoBERTa** model for zero-shot learning.
 
 The service analyzes each feedback text and classifies it by:
 - **Sentiment** (positive, neutral, negative)
