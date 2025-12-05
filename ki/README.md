@@ -1,13 +1,14 @@
 # KI-ARS AI Service
 
-This directory contains the AI microservice used by the KI-ARS system for automatic text classification.  
-It is implemented in Python using FastAPI and the pre-trained **XLM-RoBERTa** model for zero-shot learning.
+This directory contains the AI microservice used by the KI-ARS system for automatic text classification. 
+
+It is implemented in Python using  the pre-trained **XLM-RoBERTa** model for zero-shot learning.
 
 The service analyzes each feedback text and classifies it by:
-- Sentiment (positive, neutral, negative)
-- Topic (e.g., Organisation, Content, Materials)
-- Urgency (low, medium, high) --> only for questions, indicating how urgent the request is
-- Type (question or statement)
+- **Sentiment** (positive, neutral, negative)
+- **Topic** (e.g., Organisation, Content, Materials)
+- **Urgency** (low, medium, high) --> only for questions, indicating how urgent the request is
+- **Type** (question or statement)
 
 ---
 
