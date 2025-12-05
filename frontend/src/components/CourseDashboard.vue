@@ -44,10 +44,13 @@ onMounted(loadData);
 
 const lectures = ref([]);
 
+/** Lectures laden und NACH DATUM sortieren (wichtig für 1-basierte Nummerierung) */
 async function loadLectures() {
   const res = await fetch(`/api/course/${courseId.value}/lectures`);
   if (res.ok) {
-    lectures.value = await res.json();
+    const data = await res.json();
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+    lectures.value = data;
   }
 }
 
@@ -63,6 +66,76 @@ onMounted(async () => {
   await loadLectures();
 });
 
+/** Datum robust normalisieren → "YYYY-MM-DD" */
+function normalizeDate(d) {
+  if (!d) return null;
+  const asDate = new Date(d);
+  if (!isNaN(asDate)) {
+    return asDate.toISOString().slice(0, 10);
+  }
+  // Fallback: String schon im richtigen Format oder ähnlich
+  if (typeof d === "string") return d.slice(0, 10);
+  return null;
+}
+
+/** Map: Lecture-ID -> laufende Nummer (1-basiert) */
+const lectureIndexMap = computed(() => {
+  const map = {};
+  lectures.value.forEach((lec, idx) => {
+    if (lec && lec.id != null) {
+      map[lec.id] = idx + 1;
+    }
+  });
+  return map;
+});
+
+const lectureDateIndexMap = computed(() => {
+  const map = {};
+  lectures.value.forEach((lec, idx) => {
+    const key = normalizeDate(lec?.date);
+    if (key) map[key] = idx + 1;
+  });
+  return map;
+});
+
+function formatDateDE(d) {
+  const dt = new Date(d);
+  if (isNaN(dt)) return d ?? "";
+  return dt.toLocaleDateString("de-DE");
+}
+
+function lectureLabel(fb) {
+
+  const lecId = fb?.lectureId ?? fb?.lecture?.id ?? fb?.lecture_id ?? null;
+  if (lecId != null) {
+    const n = lectureIndexMap.value[lecId];
+    if (n) return `Vorlesungseinheit ${n}`;
+    // zur Not: Datum der Lecture suchen und anzeigen
+    const lec = lectures.value.find(l => l?.id === lecId);
+    if (lec?.date) return `Vorlesung vom ${formatDateDE(lec.date)}`;
+  }
+
+  const key = normalizeDate(fb?.lectureDate);
+  if (key) {
+    const nByDate = lectureDateIndexMap.value[key];
+    if (nByDate) return `Vorlesungseinheit ${nByDate}`;
+    // Wenn keine Nummer, zumindest Datum anzeigen
+    return `Vorlesung vom ${formatDateDE(key)}`;
+  }
+
+  const directNumber =
+      fb?.lectureNumber ??
+      fb?.lecture_index ??
+      fb?.lectureNo ??
+      fb?.lecture?.number ??
+      null;
+  if (typeof directNumber === "number" && Number.isFinite(directNumber)) {
+    return `Vorlesungseinheit ${directNumber}`;
+  }
+
+  return `keiner Vorlesungseinheit zugeordnet`;
+}
+
 const groupedFeedback = computed(() => {
   const grouped = {};
   feedbackList.value.forEach(fb => {
@@ -70,9 +143,11 @@ const groupedFeedback = computed(() => {
     const type = fb.question ? "Fragen" : "Aussagen";
     const sentiment = fb.sentiment || "neutral";
 
-    if (!grouped[topic]) grouped[topic] = { Fragen: {}, Aussagen: {} };
+    if (!grouped[topic]) grouped[topic] = { Fragen: {}, Aussagen: {}, __count: 0 };
     if (!grouped[topic][type][sentiment]) grouped[topic][type][sentiment] = [];
+
     grouped[topic][type][sentiment].push(fb);
+    grouped[topic].__count += 1;
   });
   return grouped;
 });
@@ -144,7 +219,6 @@ function urgencyData(data) {
     <div v-if="summary" class="summary">
       <h2>Gesamtauswertung für Kurs:  {{ summary.courseName }}</h2>
 
-      <!-- === Vorlesungseinheiten === -->
       <div class="lecture-list">
         <h3>Vorlesungseinheiten</h3>
         <div class="lecture-buttons">
@@ -186,9 +260,9 @@ function urgencyData(data) {
     <section v-if="Object.keys(groupedFeedback).length" class="feedback-section">
       <h2>Feedback nach Kategorien</h2>
 
-      <div v-for="(topicData, topic) in groupedFeedback" :key="topic" class="topic-block">
+      <div v-for="(topicBlock, topic) in groupedFeedback" :key="topic" class="topic-block">
         <div class="topic-header" @click="toggleTopic(topic)">
-          <h3>{{ topic }}</h3>
+          <h3>{{ topic }}: {{ topicBlock.__count }}</h3>
           <span>{{ expandedTopics[topic] ? "▲" : "▼" }}</span>
         </div>
 
@@ -202,14 +276,17 @@ function urgencyData(data) {
 
               <transition name="fade">
                 <div v-if="expandedSub[topic]?.[type]" class="sentiment-section">
-                  <div v-for="(sentimentGroup, sentiment) in topicData[type]" :key="sentiment" class="sentiment-block">
+                  <div v-for="(sentimentGroup, sentiment) in topicBlock[type]" :key="sentiment" class="sentiment-block">
                     <div class="sentiment-header" @click="toggleSentiment(topic, type, sentiment)">
                       <em>Sentiment: {{ sentiment }}</em>
                       <span>{{ expandedSentiment[topic]?.[type]?.[sentiment] ? "▲" : "▼" }}</span>
                     </div>
 
                     <ul v-if="expandedSentiment[topic]?.[type]?.[sentiment]" class="feedback-list">
-                      <li v-for="fb in sentimentGroup" :key="fb.id">{{ fb.text }}</li>
+                      <li v-for="fb in sentimentGroup" :key="fb.id">
+                        {{ fb.text }}
+                        <span class="lecture-tag">({{ lectureLabel(fb) }})</span>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -314,7 +391,6 @@ body {
   transform: translateY(-1px);
 }
 
-
 .dashboard {
   max-width: 1150px;
   margin: 90px auto 60px auto;
@@ -418,6 +494,7 @@ h2 {
     max-width: 100%;
   }
 }
+
 .lecture-list {
   margin-bottom: 30px;
 }
@@ -456,10 +533,10 @@ h2 {
 
 .topic-block {
   margin-bottom: 16px;
-  border: 1px solid var(--border);
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
-  background: var(--white);
-  box-shadow: var(--shadow);
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,.06);
   overflow: hidden;
 }
 
@@ -476,9 +553,7 @@ h2 {
   transition: background 0.2s ease;
 }
 
-.topic-header:hover {
-  filter: brightness(1.05);
-}
+.topic-header:hover { filter: brightness(1.05); }
 
 .sub-header {
   background: #eef2ff;
@@ -512,5 +587,11 @@ h2 {
   padding: 6px 0;
 }
 
+.lecture-tag {
+  opacity: 0.85;
+  font-size: 0.9em;
+  margin-left: 6px;
+  color: #374151;
+}
 </style>
 
