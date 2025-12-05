@@ -1,7 +1,6 @@
 # KI-ARS Frontend
 
-This directory contains the Vue.js single-page application used to display lecture feedback, analytics and course information.  
-The frontend retrieves data from the Spring Boot backend and visualizes sentiment, topics and question statistics using Chart.js.
+This directory contains the Vue.js single-page application used to display lecture feedback, analytics and course information.
 
 ---
 
