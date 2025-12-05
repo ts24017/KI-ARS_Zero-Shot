@@ -1,12 +1,33 @@
 <script setup>
-import { ref } from "vue";
-import { useRoute } from "vue-router";
+import { ref, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
+const router = useRouter();
+
 const courseId = route.params.courseId;
 const lectureId = route.params.lectureId;
+
+const courseName = ref(route.query.courseName || "");
+const lectureNumber = ref(
+    route.query.lectureNumber ? Number(route.query.lectureNumber) : null
+);
+
 const feedback = ref("");
 const message = ref("");
+
+// Dynamischer Titel
+const lectureTitle = computed(() => {
+  const base = lectureNumber.value
+      ? `Vorlesungseinheit ${lectureNumber.value}`
+      : "Vorlesungseinheit";
+
+  return courseName.value ? `${base} - ${courseName.value}` : base;
+});
+
+function goBack() {
+  router.push(`/student/course/${courseId}`);
+}
 
 async function submitFeedback() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -20,7 +41,7 @@ async function submitFeedback() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       text: feedback.value,
-      studentId: user.id,
+      studentId: user.id
     }),
   });
 
@@ -35,7 +56,10 @@ async function submitFeedback() {
 
 <template>
   <div class="lecture-view">
-    <h1>Vorlesungseinheit</h1>
+
+    <button class="back-btn" @click="goBack">Zurück</button>
+
+    <h1>{{ lectureTitle }}</h1>
     <p>Hier kannst du dein Feedback zu dieser Einheit eingeben.</p>
 
     <textarea
@@ -58,6 +82,22 @@ async function submitFeedback() {
   font-family: "Inter", Arial, sans-serif;
   padding: 20px;
   color: #1e293b;
+}
+
+.back-btn {
+  margin-bottom: 20px;
+  padding: 8px 14px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.back-btn:hover {
+  background: #1e40af;
 }
 
 textarea.feedback-input {

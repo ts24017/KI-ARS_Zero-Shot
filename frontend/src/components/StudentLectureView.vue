@@ -4,30 +4,72 @@ import { useRoute, useRouter } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
+
 const lectures = ref([]);
-const courseId = route.params.id;
+const courseName = ref("");
+const courseId = Number(route.params.id);
+
+const user = JSON.parse(localStorage.getItem("user"));
+
+async function loadLectures() {
+  const res = await fetch(`/api/course/${courseId}/lectures`);
+  if (res.ok) {
+    lectures.value = await res.json();
+  } else {
+    lectures.value = [];
+  }
+}
+
+async function loadCourseName() {
+  if (!user || !user.id) return;
+
+  const res = await fetch(`/api/student/${user.id}/courses`);
+  if (res.ok) {
+    const data = await res.json();
+    const course = data.find((c) => c.id === courseId);
+    if (course) {
+      courseName.value = course.name;
+    }
+  }
+}
 
 onMounted(async () => {
-  const res = await fetch(`/api/course/${courseId}/lectures`);
-  if (res.ok) lectures.value = await res.json();
+  await Promise.all([loadLectures(), loadCourseName()]);
 });
 
-function goToLecture(lectureId) {
-  router.push(`/student/course/${courseId}/lecture/${lectureId}`);
+function goToLecture(lectureId, index) {
+  router.push({
+    path: `/student/course/${courseId}/lecture/${lectureId}`,
+    query: {
+      courseName: courseName.value,
+      lectureNumber: index + 1
+    }
+  });
+}
+
+function goBack() {
+  router.push("/student");
 }
 </script>
 
 <template>
   <div class="student-course-view">
+    <button class="back-btn" @click="goBack">
+      Zurück
+    </button>
+
     <h1>Lehrveranstaltungen</h1>
-    <p>Hier siehst du alle Einheiten für diesen Kurs.</p>
+    <p>
+      Hier siehst du alle Einheiten für den Kurs:
+      <strong>{{ courseName }}</strong>.
+    </p>
 
     <ul class="lecture-list">
       <li
           v-for="(lecture, index) in lectures"
           :key="lecture.id"
           class="lecture-item"
-          @click="goToLecture(lecture.id)"
+          @click="goToLecture(lecture.id, index)"
       >
         🎓 <strong>Vorlesungseinheit {{ index + 1 }}</strong>
       </li>
@@ -44,10 +86,31 @@ function goToLecture(lectureId) {
   color: #1e293b;
 }
 
+.back-btn {
+  margin-bottom: 20px;
+  padding: 8px 14px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.back-btn:hover {
+  background: #1e40af;
+}
+
 h1 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 12px;
+}
+
+p {
+  margin-bottom: 18px;
+  font-size: 0.95rem;
 }
 
 .lecture-list {

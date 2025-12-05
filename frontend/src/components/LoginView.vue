@@ -54,7 +54,7 @@ async function handleLogin() {
 <template>
   <div class="login-page">
     <div class="login-container">
-      <h2>Login</h2>
+      <h2>Login zum KI-ARS: Zero-Shot Feedback System</h2>
 
       <form @submit.prevent="handleLogin">
         <input v-model="username" placeholder="Username" required />

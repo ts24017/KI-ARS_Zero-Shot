@@ -31,6 +31,9 @@ function logout() {
 
 <template>
   <div class="dashboard">
+
+    <button class="logout-btn" @click="logout">Abmelden</button>
+
     <h1>Willkommen, {{ user.username }}</h1>
     <h2>Deine Lehrveranstaltungen</h2>
 
@@ -49,45 +52,56 @@ function logout() {
     </ul>
 
     <p v-else>Keine Lehrveranstaltungen gefunden.</p>
-
-    <button @click="logout">Logout</button>
   </div>
 </template>
 
-<style>
+<style scoped>
 .dashboard {
   max-width: 700px;
   margin: 60px auto;
   padding: 20px;
-  font-family: Arial, sans-serif;
+  font-family: "Inter", sans-serif;
+  position: relative;
 }
+
+.logout-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.25s ease;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
+
 .error {
   color: red;
 }
+
 ul {
   list-style: none;
   padding: 0;
 }
+
 .course-item {
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
+  padding: 12px 10px;
+  border-bottom: 1px solid #dbe3ec;
   cursor: pointer;
   transition: background-color 0.2s;
+  border-radius: 6px;
 }
+
 .course-item:hover {
-  background-color: #f1f5f9;
-}
-button {
-  margin-top: 20px;
-  padding: 10px 15px;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-button:hover {
-  background-color: #2563eb;
+  background-color: #e0f2fe;
 }
 </style>
 

@@ -106,7 +106,6 @@ function lectureLabel(fb) {
   if (lecId != null) {
     const n = lectureIndexMap.value[lecId];
     if (n) return `Vorlesungseinheit ${n}`;
-    // zur Not: Datum der Lecture suchen und anzeigen
     const lec = lectures.value.find(l => l?.id === lecId);
     if (lec?.date) return `Vorlesung vom ${formatDateDE(lec.date)}`;
   }
@@ -115,7 +114,6 @@ function lectureLabel(fb) {
   if (key) {
     const nByDate = lectureDateIndexMap.value[key];
     if (nByDate) return `Vorlesungseinheit ${nByDate}`;
-    // Wenn keine Nummer, zumindest Datum anzeigen
     return `Vorlesung vom ${formatDateDE(key)}`;
   }
 
@@ -199,13 +197,12 @@ function urgencyData(data) {
 <template>
   <header class="headbar">
     <div class="headbar-inner">
-      <router-link to="/" class="logo">Audience Response System</router-link>
+      <router-link to="/" class="logo">KI-ARS: Zero-Shot Feedback System</router-link>
       <nav>
-        <!-- Home entfernt -->
         <router-link to="/teacher" class="nav-link">Kurse</router-link>
       </nav>
       <div class="spacer"></div>
-      <button @click="logout" class="logout">Ausloggen</button>
+      <button @click="logout" class="logout">Abmelden</button>
     </div>
   </header>
 
