@@ -1,4 +1,4 @@
-<script setup>
+<<script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Pie, Bar } from "vue-chartjs";
@@ -201,8 +201,8 @@ function urgencyData(data) {
     <div class="headbar-inner">
       <router-link to="/" class="logo">Audience Response System</router-link>
       <nav>
-        <router-link to="/" class="nav-link">Home</router-link>
-        <router-link to="/" class="nav-link">Kurse</router-link>
+        <!-- Home entfernt -->
+        <router-link to="/teacher" class="nav-link">Kurse</router-link>
       </nav>
       <div class="spacer"></div>
       <button @click="logout" class="logout">Ausloggen</button>
@@ -230,9 +230,18 @@ function urgencyData(data) {
       </div>
 
       <div class="kpis">
-        <div class="kpi"><p>Anzahl Feedbacks:</p><strong>{{ summary.totalFeedback }}</strong></div>
-        <div class="kpi"><p>Fragen:</p><strong>{{ summary.questionCount }}</strong></div>
-        <div class="kpi"><p>Aussagen:</p><strong>{{ summary.statementCount }}</strong></div>
+        <div class="kpi">
+          <p>Anzahl Feedbacks:</p>
+          <strong>{{ summary.totalFeedback }}</strong>
+        </div>
+        <div class="kpi">
+          <p>Fragen:</p>
+          <strong>{{ summary.questionCount }}</strong>
+        </div>
+        <div class="kpi">
+          <p>Aussagen:</p>
+          <strong>{{ summary.statementCount }}</strong>
+        </div>
       </div>
 
       <div class="charts">
@@ -272,7 +281,11 @@ function urgencyData(data) {
 
               <transition name="fade">
                 <div v-if="expandedSub[topic]?.[type]" class="sentiment-section">
-                  <div v-for="(sentimentGroup, sentiment) in topicBlock[type]" :key="sentiment" class="sentiment-block">
+                  <div
+                      v-for="(sentimentGroup, sentiment) in topicBlock[type]"
+                      :key="sentiment"
+                      class="sentiment-block"
+                  >
                     <div class="sentiment-header" @click="toggleSentiment(topic, type, sentiment)">
                       <em>Sentiment: {{ sentiment }}</em>
                       <span>{{ expandedSentiment[topic]?.[type]?.[sentiment] ? "▲" : "▼" }}</span>

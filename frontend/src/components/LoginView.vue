@@ -78,7 +78,6 @@ async function handleLogin() {
   font-family: "Segoe UI", Arial, sans-serif;
 }
 
-/* Login-Karte */
 .login-container {
   width: 380px;
   background: white;
@@ -88,14 +87,13 @@ async function handleLogin() {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
-/* Überschrift */
+
 .login-container h2 {
   color: #1e3a8a;
   font-weight: 600;
   margin-bottom: 24px;
 }
 
-/* Eingabefelder */
 .login-container input {
   display: block;
   width: 100%;
