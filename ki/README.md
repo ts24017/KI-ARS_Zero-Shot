@@ -35,6 +35,8 @@ The commands below must be executed in a terminal (macOS/Linux) or PowerShell (W
    If python3 does not work, use:
 
        python -m uvicorn ki.ki_modell:app --host 0.0.0.0 --port 8000 --reload
+    OR
+
        py -m uvicorn ki.ki_modell:app --host 0.0.0.0 --port 8000 --reload
 
 The API will run on http://localhost:8000

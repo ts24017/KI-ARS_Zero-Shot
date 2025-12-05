@@ -6,11 +6,17 @@
 
        cd /KI-ARS_Zero-Shot
 
+
 2. Start the backend using the Maven wrapper:
 
-       ./mvnw spring-boot:run       (macOS / Linux)
 
-       mvnw.cmd spring-boot:run     (Windows)
+   (macOS / Linux):
+
+        ./mvnw spring-boot:run       
+
+(Windows)
+
+         mvnw.cmd spring-boot:run    
 
 The backend will be available at http://localhost:8080
 
