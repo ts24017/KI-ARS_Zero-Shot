@@ -13,9 +13,9 @@ Quick Start
 
 2. Follow the [AI Service README](ki/README.md) instructions in the `/ki` folder to install and run the AI service.
 
-3. Follow the  instructions in the `/backend` folder to install and start the Spring Boot backend.
+3. Follow the [Frontend README](frontend/README.md)  instructions in the `/backend` folder to install and start the Spring Boot backend.
 
-4. Follow the instructions in the `/frontend` folder to install and start the Vue.js frontend.
+4. Follow the [Backend README](backend/README.md) instructions in the `/frontend` folder to install and start the Vue.js frontend.
 
 5. Start the AI service by navigating into its folder and executing:
    bash
