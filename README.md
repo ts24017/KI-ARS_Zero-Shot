@@ -9,13 +9,13 @@ The system automatically detects sentiment, topic, and urgency of textual feedba
 
 Quick Start
 
-1. Clone this repository.
 
-2. Follow the [AI Service README](ki/README.md) instructions in the `/ki` folder to install and run the AI service.
+1. Follow the [AI Service README](ki/README.md) instructions in the `/ki` folder to install and run the AI service.
+
+2. Follow the [Backend README](src/README.md) instructions in the `/src` folder to install and start the Spring Boot backend.
 
 3. Follow the [Frontend README](frontend/README.md)  instructions in the `/frontend` folder to install and start the Vue.js frontend.
 
-4. Follow the [Backend README](src/README.md) instructions in the `/src` folder to install and start the Spring Boot backend.
 
 ---
 
