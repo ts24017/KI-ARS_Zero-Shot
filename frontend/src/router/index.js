@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
-import LoginView from "../components/LoginView.vue";
-import TeacherCourseView from "../components/TeacherCourseView.vue";
-import StudentCourseView from "../components/StudentCourseView.vue";
+import LoginView from "../components/auth/LoginView.vue";
+import TeacherCourseView from "../components/teacher/TeacherCourseView.vue";
+import StudentCourseView from "../components/student/StudentCourseView.vue";
 
 const routes = [
     {
@@ -24,25 +24,25 @@ const routes = [
     {
         path: "/teacher/course/:id",
         name: "CourseDashboard",
-        component: () => import("../components/CourseDashboard.vue"),
+        component: () => import("../components/teacher/CourseDashboard.vue"),
         meta: { requiresAuth: true, role: "DOZENT" },
     },
     {
         path: "/student/course/:id",
         name: "StudentCourseView",
-        component: () => import("../components/StudentLectureView.vue"),
+        component: () => import("../components/student/StudentLectureView.vue"),
         meta: { requiresAuth: true, role: "STUDENT" },
     },
     {
         path: "/student/course/:courseId/lecture/:lectureId",
         name: "StudentLectureView",
-        component: () => import("../components/StudentFeedbackView.vue"),
+        component: () => import("../components/student/StudentFeedbackView.vue"),
         meta: { requiresAuth: true, role: "STUDENT" },
     },
     {
         path: "/teacher/lecture/:id",
         name: "LectureDashboard",
-        component: () => import("../components/LectureDashboard.vue"),
+        component: () => import("../components/teacher/LectureDashboard.vue"),
         meta: { requiresAuth: true, role: "DOZENT" },
     },
     {
