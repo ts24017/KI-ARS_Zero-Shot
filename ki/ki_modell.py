@@ -205,7 +205,7 @@ def analyze_one(text: str, question_topics: List[str], nonquestion_topics: List[
 
     if topics:
         topics = boost_topic_scores(text, topics)
-        topics = topics[:1]  # <<---- Nur Anzeige Top-1
+        topics = topics[:1]
 
     return {
         "text": text,

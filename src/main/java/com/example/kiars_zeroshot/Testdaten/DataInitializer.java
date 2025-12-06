@@ -118,7 +118,6 @@ public class DataInitializer {
                     "Es wurde in der Vorlesung mit so vielen Fachbegriffen ohne Erklärung herumgeworfen, dass ich völlig verwirrt war am Ende."
             );
 
-            // Informatikrecht – Lecture 2 (Blockchain / Big Data / Smart Contracts etc.)
             List<String> feedbackLecture2 = List.of(
                     "Da wir in wenigen Tagen mit der ersten Abgabe starten, könnten Sie bitte kurz die genauen Fristen nennen?",
                     "Der Übergang von der Theorie zum Praxisteil war heute sehr abrupt.",

@@ -12,7 +12,7 @@ public class FeedbackAggregationResponse {
     private Map<String, Long> topicCounts;
     private long questionCount;
     private long statementCount;
-    private Map<String, Long> urgencyCounts;  // 👈 NEU
+    private Map<String, Long> urgencyCounts;
 
     public FeedbackAggregationResponse() {}
 
