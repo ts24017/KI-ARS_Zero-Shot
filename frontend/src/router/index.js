@@ -3,10 +3,6 @@ import LoginView from "../components/LoginView.vue";
 import TeacherCourseView from "../components/TeacherCourseView.vue";
 import StudentCourseView from "../components/StudentCourseView.vue";
 
-// 🔹 Prüfen, ob jemand eingeloggt ist
-const isAuthenticated = () => !!localStorage.getItem("userRole");
-
-// 🔹 Routen-Definition
 const routes = [
     {
         path: "/",
@@ -17,19 +13,19 @@ const routes = [
         path: "/teacher",
         name: "TeacherDashboard",
         component: TeacherCourseView,
-        meta: { requiresAuth: true, role: "DOZENT" }, // 👈 Großbuchstaben wie im Backend
+        meta: { requiresAuth: true, role: "DOZENT" },
     },
     {
         path: "/student",
         name: "StudentDashboard",
         component: StudentCourseView,
-        meta: { requiresAuth: true, role: "STUDENT" }, // 👈 dito
+        meta: { requiresAuth: true, role: "STUDENT" },
     },
     {
         path: "/teacher/course/:id",
         name: "CourseDashboard",
         component: () => import("../components/CourseDashboard.vue"),
-        meta: { requiresAuth: true, role: "DOZENT" }, // 👈 dito
+        meta: { requiresAuth: true, role: "DOZENT" },
     },
     {
         path: "/student/course/:id",
@@ -55,30 +51,26 @@ const routes = [
     },
 ];
 
-// 🔹 Router erstellen
 const router = createRouter({
     history: createWebHistory(),
     routes,
 });
 
-// 🔹 Navigation Guards (Zugriffsschutz)
 router.beforeEach((to, from, next) => {
     const role = localStorage.getItem("userRole");
 
-    // Wenn Route Auth braucht, aber niemand eingeloggt ist
     if (to.meta.requiresAuth && !role) {
-        next("/");
+        return next("/");
     }
-    // Wenn falsche Rolle versucht, falsche Seite zu öffnen
-    else if (to.meta.role && role !== to.meta.role) {
-        next("/");
+
+    if (to.meta.role && role !== to.meta.role) {
+        return next("/");
     }
-    // Alles korrekt
-    else {
-        next();
-    }
+
+    return next();
 });
 
 export default router;
+
 
 
