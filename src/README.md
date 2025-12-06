@@ -2,10 +2,11 @@
 
 ## Quick Start
 
-1. Navigate to the project root (the folder containing the pom.xml and mvnw):
+1. Navigate to the project root:
 
-       cd /KI-ARS_Zero-Shot
+       cd KI-ARS_Zero-Shot
 
+**Note:** Make sure your terminal is located in the directory where you cloned the project (e.g., Downloads or Desktop).
 
 2. Start the backend using the Maven wrapper:
 

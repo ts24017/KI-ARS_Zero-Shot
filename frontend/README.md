@@ -8,7 +8,9 @@ This directory contains the Vue.js single-page application used to display lectu
 
 1. Navigate into the frontend directory:
 
-       cd /KI-ARS_Zero-Shot/frontend
+       cd KI-ARS_Zero-Shot/frontend
+
+**Note:** Make sure your terminal is located in the directory where you cloned the project (e.g., Downloads or Desktop).
 
 2. Install all required dependencies:
 

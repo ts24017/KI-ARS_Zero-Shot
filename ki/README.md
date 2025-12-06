@@ -17,7 +17,9 @@ The commands below must be executed in a terminal (macOS/Linux) or PowerShell (W
 
 1. Navigate to the project root
 
-       cd /KI-ARS_Zero-Shot
+       cd KI-ARS_Zero-Shot
+
+**Note:** Make sure your terminal is located in the directory where you cloned the project (e.g., Downloads or Desktop).
 
 2. Install dependencies:
 
