@@ -23,9 +23,6 @@ The commands below must be executed in a terminal (macOS/Linux) or PowerShell (W
 
        pip install fastapi uvicorn torch transformers pydantic
 
-   or, if a requirements.txt file is provided:
-
-        pip install -r requirements.txt
 
 3. Start the FastAPI service with:
 
