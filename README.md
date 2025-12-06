@@ -17,15 +17,6 @@ Quick Start
 
 4. Follow the [Backend README](src/README.md) instructions in the `/frontend` folder to install and start the Vue.js frontend.
 
-5. Start the AI service by navigating into its folder and executing:
-   bash
-   python ki_modell.py
-Start the backend by navigating into its folder and executing:
-./mvnw spring-boot:run
-Now start the frontend by navigating into its folder and executing:
-npm install
-npm run dev
-
 ---
 
 Requirements
